@@ -1,8 +1,10 @@
 use std::net::SocketAddr;
 
 use argh::FromArgs;
+use tracing::level_filters::LevelFilter;
 use url::Url;
 use warp::{http, Filter};
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 mod api;
 mod lsp;
@@ -52,8 +54,13 @@ struct Options {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    tracing_subscriber::fmt()
-        .with_env_filter(std::env::var("RUST_LOG").unwrap_or_else(|_| "info".to_owned()))
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy()
+        )
         .init();
 
     let (opts, commands) = get_opts_and_commands();
